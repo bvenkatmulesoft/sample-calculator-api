@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b15a9c40-5bdd-46d2-a7d6-5d417863ddc3" >
+		<http:listener-connection host="${http.host}" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="06561e41-10f2-4f01-90ab-e095d2186870" file="configuration/config.${env}.yaml" />
+	<global-property doc:name="Global Property" doc:id="e891ef25-d197-4696-a97d-6b046d10c4dc" name="env" value="dev" />
+	<flow name="sample-calculator-apiFlow" doc:id="006488c6-8d9a-434d-85e7-d532ccf68744" >
+		<http:listener doc:name="Listener" doc:id="fac622a6-5243-4f77-acb6-675fd133b8b9" config-ref="HTTP_Listener_config" path="${http.path}"/>
+		<logger level="INFO" doc:name="Start Logger" doc:id="4ccc7081-40b7-4b95-a379-f246d29b4736" message="====== Request recieved ====="/>
+		<set-variable value="#[message.attributes.queryParams.num1]" doc:name="Set Num1 Variable" doc:id="31c25201-734d-46f8-8f32-a2791d904a43" variableName="Number1"/>
+		<set-variable value="#[message.attributes.queryParams.num2]" doc:name="Set Num2 Variable" doc:id="34f85bfa-a803-4b57-a2e1-9e69300b5714" variableName="Number2"/>
+		<ee:transform doc:name="Transform into JSON" doc:id="1064885c-4195-4825-87af-0a9993d09ce6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+//fun calculation(num1,num2) = (num1 + num2)
+//fun calculation(num1,num2) = (num1 - num2)
+//fun calculation(num1,num2) = (num1 * num2)
+//fun calculation(num1,num2) = (num1 / num2)
+---
+//calculation(10,2)
+{
+	"message": p('log.message'),
+	"addition": (vars.Number1 as Number + vars.Number2 as Number),
+	"subtraction": (vars.Number1 as Number - vars.Number2 as Number),
+	"multiplication": (vars.Number1 as Number * vars.Number2 as Number),
+	"division": (vars.Number1 as Number / vars.Number2 as Number)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End Logger" doc:id="2f913046-5d2f-4adb-9b8a-148b47146864" message="#[payload]"/>
+	</flow>
+</mule>
